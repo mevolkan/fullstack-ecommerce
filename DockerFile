@@ -1,0 +1,48 @@
+FROM php:8.1-fpm
+RUN apt-get update && apt-get install -y \
+    libpng-dev \
+    libjpeg-dev \
+    libfreetype6-dev \
+    zip \
+    unzip \
+    git \
+    curl \
+    libzip-dev \
+    && docker-php-ext-install pdo_mysql zip
+
+COPY . /var/www
+WORKDIR /var/www
+
+RUN curl -sS https://getcomposer.org/FROM php:8.1-fpm
+
+# Install system dependencies and PHP extensions
+RUN apt-get update && apt-get install -y \
+    libpng-dev \
+    libjpeg-dev \
+    libfreetype6-dev \
+    zip \
+    unzip \
+    git \
+    curl \
+    libzip-dev \
+    libssl-dev \
+    && docker-php-ext-install pdo_mysql zip
+
+# Install Redis PHP extension (phpredis)
+RUN pecl install redis \
+    && docker-php-ext-enable redis
+
+# Copy the application code into the container
+COPY . /var/www
+WORKDIR /var/www
+
+# Install Composer and dependencies
+RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+RUN composer install --no-interaction --prefer-dist
+
+# Set the command to run PHP-FPM
+CMD ["php-fpm"]
+installer | php -- --install-dir=/usr/local/bin --filename=composer
+RUN composer install
+
+CMD ["php-fpm"]
