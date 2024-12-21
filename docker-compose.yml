@@ -1,80 +1,53 @@
-version: '3.8'
+version: '1.0'
+
 services:
-  main:
-    container_name: Serve
+
+  # The Application (Laravel App)
+  app:
     build:
-      context: .
-      dockerfile: Dockerfile
-    command: 'php artisan serve --host=0.0.0.0'
+      context: ./
+      dockerfile: app.dockerfile
+    working_dir: /var/www
     volumes:
-      - .:/app
-    ports:
-      - 8000:8000
-    depends_on:
-      - db
-      - redis
+      - ./:/var/www
+    environment:
+      - "DB_PORT=3306"
+      - "DB_HOST=database"
+      - "REDIS_HOST=redis"
+      - "REDIS_PORT=6379"
 
-  queue:
-    container_name: Queue
+  # The Web Server (e.g., Nginx or Apache)
+  web:
     build:
-      context: .
-      dockerfile: Dockerfile
-    command: 'php artisan queue:work'
-    depends_on:
-      - db
-      - redis
+      context: ./
+      dockerfile: web.dockerfile
+    working_dir: /var/www
+    volumes_from:
+      - app
+    ports:
+      - 8080:80
 
-  db:
-    platform: linux/x86_64
-    image: mysql:8.0
-    container_name: Database
-    environment:
-      MYSQL_DATABASE: "${DB_DATABASE}"
-      MYSQL_USER: "${DB_USERNAME}"
-      MYSQL_ROOT: "root"
-      MYSQL_PASSWORD: "${DB_PASSWORD}"
-      MYSQL_ROOT_PASSWORD: "${DB_PASSWORD}"
+  # The Database (MySQL)
+  database:
+    image: mysql:5.6
     volumes:
-      - db:/var/lib/mysql
-    ports:
-      - 3306:3306
-
-  phpmyadmin:
-    image: phpmyadmin/phpmyadmin
-    container_name: PhpMyAdmin
-    links:
-      - db
+      - dbdata:/var/lib/mysql
     environment:
-      PMA_HOST: db
-      PMA_PORT: 3306
-      PMA_ARBITRARY: 1
-    restart: always
+      - "MYSQL_DATABASE=fullstack_ecommerce"
+      - "MYSQL_USER=root"
+      - "MYSQL_PASSWORD=qwerty123"
+      - "MYSQL_ROOT_PASSWORD=qwerty123"
     ports:
-      - 8081:80
+        - "33061:3306"
 
-  mailpit:
-    image: axllent/mailpit
-    container_name: MailPit
-    ports:
-      - "1025:1025"
-      - "8025:8025"
-    networks:
-      - laravel-exa
-
+  # Redis Service
   redis:
     image: redis:latest
-    container_name: Redis
     ports:
-      - 6379:6379
+      - "6379:6379"
     volumes:
-      - redis-data:/data
-
-networks:
-  laravel-exa:
-    driver: bridge
+      - redisdata:/data
 
 volumes:
-  db:
-    driver: local
-  redis-data:
-    driver: local
+  dbdata:
+  redisdata:
